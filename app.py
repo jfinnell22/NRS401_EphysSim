@@ -277,6 +277,9 @@ def simulate_spike_train_from_params(p):
         tail_tau=p["ina_tail_tau"],
     )
 
+    # make V_sp relative to its first sample so we can overlay it on the current Vm
+    V_sp_rel = V_sp - V_sp[0]
+
     sp_len = len(t_sp)
     refrac_steps = int(np.round(p["refractory_ms"] / dt))
 
@@ -290,8 +293,8 @@ def simulate_spike_train_from_params(p):
         if in_stim and V[i] >= p["V_thr"]:
             end = min(i + sp_len, len(t))
             nfit = end - i
-            offset = V[i] - V_sp[0]
-            V[i:end] = V_sp[:nfit] + offset
+            baseV = V[i - 1]  # use pre-spike voltage as baseline
+            V[i:end] = V_sp_rel[:nfit] + baseV
             INa[i:end] = INa_sp[:nfit]
             j = end
             j_end = min(j + refrac_steps, len(t))
@@ -335,9 +338,13 @@ def _first_spike_time(t, V, stim_on=0.0):
 def plot_module1(t, V0, INa0, V1, INa1, label1, color1, stim_on=20.0):
     fig, (ax_zoom, ax_na, ax_vm) = plt.subplots(3, 1, figsize=(12.8, 10.2), sharex=False)
 
-    t_first = _first_spike_time(t, V1, stim_on=stim_on)
-    if t_first is None:
-        t_first = stim_on + 10.0
+    # pick the earliest first spike between baseline and condition so the baseline AP
+    # remains visible when the condition suppresses spikes
+    t_first0 = _first_spike_time(t, V0, stim_on=stim_on)
+    t_first1 = _first_spike_time(t, V1, stim_on=stim_on)
+    candidates = [x for x in (t_first0, t_first1) if x is not None]
+    t_first = min(candidates) if candidates else (stim_on + 10.0)
+
     z0 = max(0.0, t_first - 4.0)
     z1 = min(float(t[-1]), t_first + 12.0)
 
