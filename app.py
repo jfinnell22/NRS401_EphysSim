@@ -805,13 +805,14 @@ with st.sidebar:
         [
             "MODULE 1A — Voltage-gated Na⁺ channels",
             "MODULE 1B — Channelopathies",
-            "MODULE 2 — Ligand-gated channels",
+            "MODULE 2A — Ligand-gated channels",
             "MODULE 2B — Case Study: Epilepsy",
         ],
         index=0,
     )
     st.markdown("---")
     st.caption("Qualitative traces • Designed for visual reasoning")
+    st.sidebar.markdown(f"Selected module: `{module}`")
 
 
 # ============================================================
@@ -906,49 +907,12 @@ elif module.startswith("MODULE 1B"):
 
 
 # ============================================================
-# MODULE 2
-# ============================================================
-
-elif module.startswith("MODULE 2A —"):
-    section_header(
-        "MODULE 2A — Ligand‑Gated Ion Channels",
-        "Exploring functional changes in ligand-gated ion channels",
-    )
-    col1, col2 = st.columns([1, 2], gap="large")
-    with col1:
-        receptor = st.radio("Receptor type", ["Excitatory (AMPA-like)", "Inhibitory (GABA_A-like)"], index=0)
-        st.markdown("---")
-        mechanism = st.radio(
-            "Mechanistic change",
-            ["None (baseline only)", "Ligand binding efficacy", "Channel kinetics (rise/decay)"],
-            index=0,
-        )
-        direction = ""
-        if mechanism == "Ligand binding efficacy":
-            direction = st.radio("Direction", ["Decrease", "Increase"], index=0)
-        elif mechanism == "Channel kinetics (rise/decay)":
-            direction = st.radio("Direction", ["Slower", "Faster"], index=0)
-            st.caption("Kinetics affects time course; I–V is largely unchanged here.")
-        st.markdown("---")
-        mode_badge("Current trace (top) + I–V curve (bottom)")
-
-    with col2:
-        base = synapse_baseline_params(receptor)
-        cond = apply_synapse_change(base, mechanism=mechanism, direction=direction)
-        fig = plot_module2_current_and_iv(base, cond, show_condition=(mechanism != "None (baseline only)"))
-        st.pyplot(fig, clear_figure=True, use_container_width=True)
-
-
-# ============================================================
 # MODULE 2B
 # ============================================================
 
-else:
-    section_header(
-        "MODULE 2B — Case Study: Epilepsy",
-        "Exploring how changes in inhibitory GABAergic tone: Epilepsy and Treatments",
-    )
-
+elif module.startswith("MODULE 2B"):
+    # MODULE 2B: explicit check first so it doesn't fall through to MODULE 2
+    section_header("MODULE 2B — Epilepsy model", "Healthy, Epileptic, and treatments.")
     left, right = st.columns([1, 2], gap="large")
 
     with left:
@@ -987,4 +951,35 @@ else:
                 treated = simulate_epilepsy_condition(state="Epileptic", drug=drug)
                 fig = plot_module2B_trio(baseline, epileptic, treated, drug_label=drug)
 
+        st.pyplot(fig, clear_figure=True, use_container_width=True)
+
+# ============================================================
+# MODULE 2 (ligand-gated)
+# ============================================================
+
+elif module.startswith("MODULE 2A"):
+    # MODULE 2A (ligand-gated)
+    section_header("MODULE 2A — Ligand‑Gated Channels", "Apply one change.")
+    col1, col2 = st.columns([1, 2], gap="large")
+    with col1:
+        receptor = st.radio("Receptor type", ["Excitatory (AMPA-like)", "Inhibitory (GABA_A-like)"], index=0)
+        st.markdown("---")
+        mechanism = st.radio(
+            "Mechanistic change",
+            ["None (baseline only)", "Ligand binding efficacy", "Channel kinetics (rise/decay)"],
+            index=0,
+        )
+        direction = ""
+        if mechanism == "Ligand binding efficacy":
+            direction = st.radio("Direction", ["Decrease", "Increase"], index=0)
+        elif mechanism == "Channel kinetics (rise/decay)":
+            direction = st.radio("Direction", ["Slower", "Faster"], index=0)
+            st.caption("Kinetics affects time course; I–V is largely unchanged here.")
+        st.markdown("---")
+        mode_badge("Current trace (top) + I–V curve (bottom)")
+
+    with col2:
+        base = synapse_baseline_params(receptor)
+        cond = apply_synapse_change(base, mechanism=mechanism, direction=direction)
+        fig = plot_module2_current_and_iv(base, cond, show_condition=(mechanism != "None (baseline only)"))
         st.pyplot(fig, clear_figure=True, use_container_width=True)
